@@ -1,0 +1,49 @@
+repo-ripper COMMAND [command options] ARGS
+
+commands
+  pull    - download or update repos
+    -f, --include-forks
+    -w, --include-wikis
+    -d, --dir=DIRECTORY Root directory (default: ./ripped-repos/)
+
+  compact - run 'gc clean --agressive'
+
+  rename  - rename user or repo
+
+  zip     - zip everything except .git folders
+    -o, --output=FILE - zip file (default: ripped-repos_YYYY-MM-DD.zip)
+
+`rr pull @ncase` get all of @ncase's source repos
+`rr pull -f @getify` get all of @getify's repos, including forks.
+`rr pull +dreamski21` get repos starred by @dreamski21
+
+`rr rename @dreamski21/archive @dreamski21/trash`
+->
+`mv './ripped-repos/@dreamski21/archive' './ripped-repos/@dreamski21/trash'`
+
+-------------------
+
+## repo-zipper.sh
+## Automating what I usually do every month or so
+# TODO use: git archive --prefix "<repo-name>/" -o ~/<repo-name>.zip -9 HEAD
+
+echo "0) Getting info"
+# TODO: make this configurable
+root_dir="ripped-repos/"
+
+echo "1) Generating 'ripped repos' logs"
+for user in $users
+  cd "$user"
+  echo -E "-={ $user }=-\n\n" > "$user.log"
+  for repo in $repos
+    cd "$repo"
+    echo "\n$user/$repo"
+    git log --short >> "../$user.log"
+    cd ..
+
+  cd ..
+
+echo "2) Zip everthing, except '.git/' folders"
+zip_file="ripped-repos_$(date +%Y-%m-%d).zip" # output file
+test -f "$zip_file" && rm --force "$zip_file" # delete it if exists
+zip --no-extra -9 --recurse-paths "$zip_file" "$root_dir" --exclude ".git/"
